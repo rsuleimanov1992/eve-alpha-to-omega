@@ -1,0 +1,11 @@
+{
+  "name": "EVE Online - AutoPilot Simple Bot",
+  "uses": "AutoPilotSimpleBot",
+  "with_narration": true,
+  "focus": true,
+  "loop": false,
+  "args": {},
+  "steps": [
+    "go"
+  ]
+}

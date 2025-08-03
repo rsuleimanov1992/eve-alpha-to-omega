@@ -1,0 +1,11 @@
+{
+  "name": "EVE Online - Ore Survey Scanner",
+  "uses": "OreSurveyScannerBot",
+  "with_narration": true,
+  "focus": true,
+  "loop": false,
+  "args": {},
+  "steps": [
+    "scan_and_report"
+  ]
+}

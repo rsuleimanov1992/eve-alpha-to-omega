@@ -1,0 +1,11 @@
+{
+  "name": "EVE Online - Ore Survey Priority Selector",
+  "uses": "OreSurveyPrioritySelectorBot",
+  "with_narration": true,
+  "focus": true,
+  "loop": false,
+  "args": {},
+  "steps": [
+    "select_priority_group_and_report"
+  ]
+}

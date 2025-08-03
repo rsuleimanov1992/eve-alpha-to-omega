@@ -1,0 +1,6 @@
+pywin32
+pysimplegui
+pyinstaller
+Werkzeug <= 2.1.2   
+flask == 2.1.2
+flask_classful

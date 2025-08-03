@@ -1,0 +1,11 @@
+{
+  "name": "EVE Online - Set Location and Autopilot",
+  "uses": "SetLocationAndStartAutopilotBot",
+  "with_narration": true,
+  "focus": true,
+  "loop": false,
+  "args": { },
+  "steps": [
+    "go"
+  ]
+}

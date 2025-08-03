@@ -1,0 +1,14 @@
+{
+  "name": "EVE Online - Hold Status Check",
+  "uses": "HoldStatusBot",
+  "with_narration": true,
+  "focus": true,
+  "loop": true,
+  "args": {
+    "check_interval": 30,
+    "hold_full_percent": 95
+  },
+  "steps": [
+    "check_hold"
+  ]
+}

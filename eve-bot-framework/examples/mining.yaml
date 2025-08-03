@@ -1,0 +1,15 @@
+{
+  "name": "EVE Online - Main Mining Bot",
+  "uses": "MiningBot",
+  "with_narration": true,
+  "focus": true,
+  "loop": false,
+  "args": {
+    "approach_distance_m": 14990,
+    "lock_distance_m": 46000,
+    "laser_distance_m": 14990
+  },
+  "steps": [
+    "go"
+  ]
+}
