@@ -403,7 +403,7 @@ class AsteroidBeltScannerBot(Bot):
             if btn_approach and meters is not None and meters > 19500:
                 self.say("Приближаюсь к цели")
                 self.click_node(btn_approach)
-                self.activate_module("ALT1")
+                self.activate_module("AfterBurner")
                 t0 = time.time()
                 while time.time() - t0 < 30:
                     self.tree.refresh()
@@ -469,7 +469,13 @@ class AsteroidBeltScannerBot(Bot):
         if not self.switch_to_mining_tab():
             self.say("Нет Mining")
             return
-        
+        # self.activate_module("AfterBurner")
+        # self.say('ХУЙВОЛА')
+        # self.activate_module("SyrveyScanner")
+
+        self.deactivate_module("SyrveyScanner")
+        # self.say('ХУЙВОЛА')
+
         asteroids = self.asteroids_in_belt()
         if len(asteroids) >= 3:
             self.say(f"Астероидов не менее чем: {len(asteroids)}")

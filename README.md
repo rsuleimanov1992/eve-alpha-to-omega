@@ -10,7 +10,7 @@
 
 **Шаг 1: Установка Python 3.11**
 
-1.  Скачайте установщик Windows (64-bit) для последней версии Python 3.13 с официального сайта: [https://www.python.org/downloads/release/python-3119/](https://www.python.org/downloads/release/python-3119/) (Раздел "Files").
+1.  Скачайте установщик Windows (64-bit) для последней версии Python 3.11 (например, 3.11.9) с официального сайта: [https://www.python.org/downloads/release/python-3119/](https://www.python.org/downloads/release/python-3119/) (Раздел "Files").
 2.  Запустите установщик.
 3.  **Важно:** На первом экране **обязательно поставьте галочку "Add python.exe to PATH"**.
 4.  Нажмите "Install Now" и дождитесь завершения.
@@ -73,6 +73,19 @@
     python.exe -m pip install --upgrade pip
     pip install -r eve-bot-framework/requirements.txt
     ```
+3.  **Исправьте проблему с PySimpleGUI:**
+    *   Удалите стандартную версию:
+        ```bash
+        pip uninstall -y PySimpleGUI
+        ```
+    *   Очистите кэш pip:
+        ```bash
+        pip cache purge
+        ```
+    *   Установите правильную версию с частного сервера:
+        ```bash
+        pip install --upgrade --extra-index-url https://PySimpleGUI.net/install PySimpleGUI
+        ```
 
 **Шаг 6: Сборка Python приложения (eve-bot-application.exe)**
 
@@ -90,3 +103,25 @@
 
 **Дебаг**
 *   Файл debug.json с выгруженными из памяти данными о игре создается в корне
+
+**Что ожидать при запуске:**
+
+*   Должны открыться два окна:
+    *   Консольное окно с логами Flask-сервера (он используется для управления ботом).
+    *   Графическое окно PySimpleGUI для взаимодействия с пользователем (загрузка конфигураций ботов и т.д.).
+*   Приложение должно попытаться найти запущенный процесс EVE Online (`exefile.exe`).
+*   Если все прошло успешно, вы сможете через UI загрузить пример конфигурации бота и запустить его.
+
+
+
+** New билд и запуск **
+
+* Команда билда, (запускать в папке рядом с eve-bot-framework)
+```
+ pyinstaller --name="eve-bot-application" --paths ".\eve-bot-framework" --add-data=".\eve-bot-framework\eve-memory-reader.dll;." .\eve-bot-framework\app.py --onefile --noconfirm
+```
+
+* Запуск .exe (запускать в папке рядом с eve-bot-framework)
+```
+.\dist\eve-bot-application.exe
+```

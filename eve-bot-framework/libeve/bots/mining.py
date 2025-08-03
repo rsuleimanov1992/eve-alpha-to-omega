@@ -1,6 +1,5 @@
 import re
 import time
-from libeve import KEYMAP
 from libeve.bots import Bot
 from libeve.bots.hold_status import HoldStatusBot
 from libeve.bots.set_location_and_autopilot import SetLocationAndStartAutopilotBot
@@ -83,55 +82,31 @@ class MiningBot(Bot):
         else:
             self.say("Нет пункта Align to")
 
-    def _is_module_active(self, key):
-        slot_name = KEYMAP.get(key)
-        slot = self.tree.find_node({"_name": slot_name}, type="ShipSlot", do_refresh=False)
-        if not slot:
-            return False
-        for glow in self.tree.find_node({"_name": "glow"}, type="Sprite", select_many=True, do_refresh=False) or []:
-            if self.tree.nodes[glow.parent].attrs.get("_name") == slot.attrs.get("_name"):
-                return True
-        return False
-
-    def _activate_module(self, key):
-        if not self._is_module_active(key):
-            slot_name = KEYMAP.get(key)
-            slot = self.tree.find_node({"_name": slot_name}, type="ShipSlot", do_refresh=False)
-            if slot:
-                self.click_node(slot)
-
-    def _deactivate_module(self, key):
-        if self._is_module_active(key):
-            slot_name = KEYMAP.get(key)
-            slot = self.tree.find_node({"_name": slot_name}, type="ShipSlot", do_refresh=False)
-            if slot:
-                self.click_node(slot)
-
     def _activate_lasers_if_needed(self):
         activated = False
-        if not self._is_module_active("F1"):
-            self._activate_module("F1")
+        if not self.is_module_active("F1"):
+            self.activate_module("F1")
             activated = True
-        if not self._is_module_active("F2"):
-            self._activate_module("F2")
+        if not self.is_module_active("F2"):
+            self.activate_module("F2")
             activated = True
         if activated:
             self._cycle_start_time = time.time()
 
     def _deactivate_lasers(self):
-        self._deactivate_module("F1")
-        self._deactivate_module("F2")
+        self.deactivate_module("F1")
+        self.deactivate_module("F2")
         self.check_hold_and_handle()
 
     def _lasers_are_active(self):
-        return self._is_module_active("F1") or self._is_module_active("F2")
+        return self.is_module_active("F1") or self.is_module_active("F2")
 
     def _both_lasers_active(self):
-        return self._is_module_active("F1") and self._is_module_active("F2")
+        return self.is_module_active("F1") and self.is_module_active("F2")
 
     def _stop_ship(self):
         self.say("Останавливаю корабль")
-        self.deactivate_module("ALT1")
+        self.deactivate_module("AfterBurner")
         time.sleep(0.3)
         stop_btn = self.tree.find_node({"type": "StopButton"}, type="StopButton", do_refresh=False)
         if not stop_btn:
@@ -213,7 +188,7 @@ class MiningBot(Bot):
             self.click_node(btn)
 
     def _approach(self, win):
-        self.activate_module("ALT1")
+        self.activate_module("AfterBurner")
         btn = self._find_button(win, "selectedItemApproach")
         label_text = self._get_label_text(win)
         _, meters = self._parse_object_distance(label_text) if label_text else (None, None)
@@ -399,7 +374,7 @@ class MiningBot(Bot):
         def _check_and_stop_ship_if_needed(win):
             label_text = self._get_label_text(win) if win else None
             _, meters = self._parse_object_distance(label_text) if label_text else (None, None)
-            if self.is_module_active('ALT1') and meters is not None and meters <= self.ship_stop_distance:
+            if self.is_module_active('AfterBurner') and meters is not None and meters <= self.ship_stop_distance:
                 self._stop_ship()
 
         self.tree.refresh()

@@ -7,7 +7,7 @@ import os
 DEBUG = False  # Переключить в True для отладки
 
 if os.environ.get("ENV", "production") == "production":
-    eve_memory_reader = ctypes.WinDLL("./eve-memory-reader.dll")
+    eve_memory_reader = ctypes.WinDLL("./eve-bot-framework/eve-memory-reader.dll")
 else:
     eve_memory_reader = ctypes.WinDLL("../x64/Release/eve-memory-reader.dll")
 

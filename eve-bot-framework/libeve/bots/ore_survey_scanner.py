@@ -1,6 +1,5 @@
 import re
 import time
-from libeve import KEYMAP
 from libeve.bots import Bot
 from .ore_survey_priority_selector import OreSurveyPrioritySelectorBot
 from libeve.bots.mining_drones import MiningDronesBot
@@ -74,27 +73,7 @@ class OreSurveyScannerBot(Bot):
 
     def activate_survey_scanner(self):
         self.say("Включаю сканер руды", narrate=True)
-        self.activate_module("ALT2")
-
-    def activate_module(self, slot_key):
-        if not self.is_module_active(slot_key):
-            slot = self.tree.find_node({"_name": KEYMAP[slot_key]}, type="ShipSlot")
-            if slot:
-                self.click_node(slot)
-                t0 = time.time()
-                while time.time() - t0 < 1:
-                    if self.is_module_active(slot_key):
-                        break
-                    time.sleep(0.05)
-
-    def is_module_active(self, slot_key):
-        slot = self.tree.find_node({"_name": KEYMAP[slot_key]}, type="ShipSlot", do_refresh=False)
-        if not slot:
-            return False
-        for glow in self.tree.find_node({"_name": "glow"}, type="Sprite", select_many=True, do_refresh=False) or []:
-            if self.tree.nodes[glow.parent].attrs.get("_name") == KEYMAP[slot_key]:
-                return True
-        return False
+        self.activate_module("SyrveyScanner")
 
     def get_ore_list(self):
         self.tree.refresh()

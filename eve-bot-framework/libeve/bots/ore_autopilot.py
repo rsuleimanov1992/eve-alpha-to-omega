@@ -1,5 +1,4 @@
 import time
-from libeve import KEYMAP
 from libeve.bots import Bot
 
 class OreAutoPilotBot(Bot):
@@ -139,22 +138,4 @@ class OreAutoPilotBot(Bot):
                 break
 
     def _activate_afterburner(self):
-        self.activate_module("ALT1")
-
-    def is_module_active(self, slot_key):
-        slot = self.tree.find_node({"_name": KEYMAP[slot_key]}, type="ShipSlot")
-        if not slot:
-            return False
-        for glow in self.tree.find_node(
-            {"_name": "glow"}, type="Sprite", select_many=True
-        ) or []:
-            if self.tree.nodes[glow.parent].attrs.get("_name") == KEYMAP[slot_key]:
-                return True
-        return False
-
-    def activate_module(self, slot_key):
-        if not self.is_module_active(slot_key):
-            self.say(f"Включаю {slot_key}", narrate=True)
-            slot = self.tree.find_node({"_name": KEYMAP[slot_key]}, type="ShipSlot")
-            if slot:
-                self.click_node(slot)
+        self.activate_module("AfterBurner")

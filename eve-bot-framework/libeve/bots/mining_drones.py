@@ -2,7 +2,6 @@ import re
 import time
 import win32api
 import win32con
-from libeve import KEYMAP
 from libeve.bots import Bot
 
 class MiningDronesBot(Bot):

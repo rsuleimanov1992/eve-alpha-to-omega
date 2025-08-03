@@ -176,7 +176,6 @@ class OreSurveyPrioritySelectorBot(Bot):
                         stop_safely_callback=self.stop_safely_callback,
                     )
                     autopilot.tree = self.tree
-
                     autopilot.go()
                     raise Exception("Эвакуация")
             except (ValueError, IndexError):
@@ -333,7 +332,7 @@ class OreSurveyPrioritySelectorBot(Bot):
                     "kof": self.ORES_KOF[name],
                 })
 
-        if len(all_entries) > 41:
+        if len(all_entries) > 1:
             all_entries = all_entries[:len(all_entries) - 1]
         self.create_asteroid_log(all_entries)
 

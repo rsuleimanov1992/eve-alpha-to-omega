@@ -1,12 +1,16 @@
+import sys
 import tkinter as tk
 from tkinter import ttk, filedialog
 import json
 import os.path
 import threading
 import time
+from time import sleep
 
 import libeve.driver
 from api import api, BotView
+from libeve.utils import CustomLog
+
 
 class Application(object):
     def __init__(self):
@@ -29,7 +33,13 @@ class Application(object):
         self.stop_interrupt = threading.Event()
         self.stop_safely_interrupt = threading.Event()
         self.reset_run_thread()
+
         self.setup_ui()
+        self._browse_file()
+
+        if self.bot_loaded:
+            self.initiate_driver()
+
         self.show()
 
     def setup_ui(self):
@@ -77,6 +87,24 @@ class Application(object):
             self.bot_config_entry.delete(0, tk.END)
             self.bot_config_entry.insert(0, file_path)
             self.bot_config_entry.config(state='readonly')
+            self.load({"bot_config_file": file_path})
+
+    def _browse_file(self):
+        file_path_map = {
+            'set_location_and_autopilot': r'eve-bot-framework\examples\set_location_and_autopilot.json',
+            'asteroid_belt_scanner': r'eve-bot-framework\examples\asteroid_belt_scanner.json',
+            'autopilot_simple': r'eve-bot-framework\examples\autopilot_simple.json',
+        }
+
+        file_path = None
+        if len(sys.argv) > 1:
+            for key in file_path_map.keys():
+                if sys.argv[1] in key:
+                    file_path = file_path_map[key]
+                    sys.argv = sys.argv[:1]
+                    break
+
+        if file_path:
             self.load({"bot_config_file": file_path})
 
     def reset_run_thread(self):
@@ -212,5 +240,15 @@ class Application(object):
     def show(self):
         self.root.mainloop()
 
+
 if __name__ == "__main__":
-    Application()
+    for i in range(1, 1000000000):
+        try:
+            print(f"---> RUN NUMBER {i} <---")
+            Application()
+            break
+        except Exception as e:
+            error = f'---> ERROR {e} <---'
+            print(error)
+            CustomLog.write_log(error)
+            sleep(5)
