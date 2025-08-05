@@ -50,3 +50,34 @@ class CustomLog:
 
         with open('log', 'a', encoding='utf-8') as f:
             f.write(f"[{datetime.now().strftime('%d.%m.%Y %H:%M:%S')}] - {log_text}")
+
+
+class GoodBelt:
+    belt_node = None
+    asteroid_data = None
+
+    __BELT_THRESHOLD = 20000
+
+    @classmethod
+    def set_belt_node(cls, belt_node):
+        """ Сохранит ноду пояса астероидов куда собрался лететь """
+        cls.belt_node = belt_node
+
+    @classmethod
+    def set_asteroid_data(cls, asteroid_data):
+        """ Сохранит данные астероидов для дальнейшего вычисления """
+        cls.asteroid_data = asteroid_data
+
+    @classmethod
+    def get_belt_node(cls):
+        """ Отдаст ноу если в поясе астероидов много скордита """
+        if cls.belt_node and cls.asteroid_data:
+            total = sum(asteroid.get('volume') for asteroid in cls.asteroid_data
+                        if 'scordite' in asteroid.get('name').lower())
+            if total < cls.__BELT_THRESHOLD:
+                cls.belt_node, cls.asteroid_data = None, None
+            CustomLog.write_log(f'Скордита {total}')
+        else:
+            CustomLog.write_log(f'НЕД ДАННЫХ {bool(cls.belt_node)} {bool(cls.asteroid_data)}')
+            cls.belt_node, cls.asteroid_data = None, None
+        return cls.belt_node

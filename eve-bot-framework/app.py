@@ -13,7 +13,7 @@ from libeve.utils import CustomLog
 
 
 class Application(object):
-    def __init__(self):
+    def __init__(self, run_number: int):
         BotView.app = self
         self.root = tk.Tk()
         self.root.title("EVE Online - Bot Application")
@@ -32,6 +32,7 @@ class Application(object):
         self.pause_interrupt = threading.Event()
         self.stop_interrupt = threading.Event()
         self.stop_safely_interrupt = threading.Event()
+        self.run_number = run_number
         self.reset_run_thread()
 
         self.setup_ui()
@@ -96,13 +97,16 @@ class Application(object):
             'autopilot_simple': r'eve-bot-framework\examples\autopilot_simple.json',
         }
 
-        file_path = None
-        if len(sys.argv) > 1:
-            for key in file_path_map.keys():
-                if sys.argv[1] in key:
-                    file_path = file_path_map[key]
-                    sys.argv = sys.argv[:1]
-                    break
+        if self.run_number > 1:
+            file_path = file_path_map['set_location_and_autopilot']
+        else:
+            file_path = None
+            if len(sys.argv) > 1:
+                for key in file_path_map.keys():
+                    command = sys.argv[1]
+                    if command in key:
+                        file_path = file_path_map[key]
+                        break
 
         if file_path:
             self.load({"bot_config_file": file_path})
@@ -245,7 +249,7 @@ if __name__ == "__main__":
     for i in range(1, 1000000000):
         try:
             print(f"---> RUN NUMBER {i} <---")
-            Application()
+            Application(run_number=i)
             break
         except Exception as e:
             error = f'---> ERROR {e} <---'

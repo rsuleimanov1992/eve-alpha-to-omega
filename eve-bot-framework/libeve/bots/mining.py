@@ -6,7 +6,6 @@ from libeve.bots.set_location_and_autopilot import SetLocationAndStartAutopilotB
 from libeve.bots.mining_drones import MiningDronesBot
 from libeve.monitoring import ShipHealthMonitor
 
-
 class MiningBot(Bot):
     def __init__(
         self,

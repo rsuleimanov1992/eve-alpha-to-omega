@@ -7,6 +7,7 @@ from libeve.bots import Bot
 from libeve.bots.ore_survey_scanner import OreSurveyScannerBot
 from libeve.bots.mining_drones import MiningDronesBot
 from libeve.monitoring import ShipHealthMonitor
+from libeve.utils import GoodBelt
 
 
 class AsteroidBeltScannerBot(Bot):
@@ -469,12 +470,6 @@ class AsteroidBeltScannerBot(Bot):
         if not self.switch_to_mining_tab():
             self.say("Нет Mining")
             return
-        # self.activate_module("AfterBurner")
-        # self.say('ХУЙВОЛА')
-        # self.activate_module("SyrveyScanner")
-
-        self.deactivate_module("SyrveyScanner")
-        # self.say('ХУЙВОЛА')
 
         asteroids = self.asteroids_in_belt()
         if len(asteroids) >= 3:
@@ -492,12 +487,12 @@ class AsteroidBeltScannerBot(Bot):
             return
         belts_left = belt_nodes.copy()
         while belts_left:
-            belt_node = random.choice(belts_left)
+            belt_node = GoodBelt.get_belt_node() or random.choice(belts_left)  # !!!
             belt_name = belt_node.attrs.get("_text", "")
             if self._is_blacklisted(belt_name):
                 belts_left.remove(belt_node)
                 continue
-
+            GoodBelt.set_belt_node(belt_node)
             warp_success = self.warp_to_belt(belt_node)
             if warp_success:
                 self.wait_until_warp_finished()

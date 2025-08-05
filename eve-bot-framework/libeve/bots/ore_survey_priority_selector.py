@@ -7,6 +7,18 @@ from libeve.bots import Bot
 from libeve.bots.mining_drones import MiningDronesBot
 from libeve.monitoring import ShipHealthMonitor
 from libeve.bots.hold_status import HoldStatusBot
+from libeve.utils import GoodBelt
+
+
+class SurveyScanResults:
+    MAX = 20
+
+    @classmethod
+    def update_max_asteroid_val(cls, current_num: int):
+        """ Обновляет максимальное кол-во астероидов которое встречается в Survey Scan Results """
+        if current_num > cls.MAX:
+
+            cls.MAX = current_num
 
 class OreSurveyPrioritySelectorBot(Bot):
     ORES = {
@@ -332,9 +344,12 @@ class OreSurveyPrioritySelectorBot(Bot):
                     "kof": self.ORES_KOF[name],
                 })
 
-        if len(all_entries) > 1:
+        SurveyScanResults.update_max_asteroid_val(len(all_entries))
+        if len(all_entries) == SurveyScanResults.MAX:
+            self.say(f'Астероидов {SurveyScanResults.MAX}')
             all_entries = all_entries[:len(all_entries) - 1]
         self.create_asteroid_log(all_entries)
+        GoodBelt.set_asteroid_data(all_entries)
 
         def phrase(best):
             c = best['cycles']
