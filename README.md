@@ -125,3 +125,12 @@
 ```
 .\dist\eve-bot-application.exe
 ```
+```
+.\dist\eve-bot-application.exe set_location_and_autopilot
+```
+```
+.\dist\eve-bot-application.exe asteroid_belt_scanner
+```
+```
+.\dist\eve-bot-application.exe autopilot_simple
+```

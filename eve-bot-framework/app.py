@@ -10,6 +10,7 @@ from time import sleep
 import libeve.driver
 from api import api, BotView
 from libeve.utils import CustomLog
+from restart_utils import start_game, restart_game
 
 
 class Application(object):
@@ -248,6 +249,8 @@ class Application(object):
 if __name__ == "__main__":
     for i in range(1, 1000000000):
         try:
+            start_game() if i == 1 else restart_game()
+
             print(f"---> RUN NUMBER {i} <---")
             Application(run_number=i)
             break
