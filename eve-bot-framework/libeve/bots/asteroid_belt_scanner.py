@@ -457,6 +457,7 @@ class AsteroidBeltScannerBot(Bot):
         ore_bot.scan_and_report()
 
     def go(self):
+        self.quit_if_connection_lost()
         self._reset_blacklist_if_needed()
         if not self.ensure_directional_scanner_open():
             return

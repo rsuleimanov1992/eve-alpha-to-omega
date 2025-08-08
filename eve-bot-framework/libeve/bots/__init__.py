@@ -177,6 +177,10 @@ class Bot(object):
                 break
             time.sleep(0.15)
         return node
+    
+    def quit_if_connection_lost(self):
+        if self.tree.find_node({"_setText": "Connection Lost"}):
+            raise Exception('Connection Lost')
 
     def undock(self):
         undock_btn = self.wait_for({"_setText": "Undock"}, type="LabelThemeColored")

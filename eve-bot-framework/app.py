@@ -41,8 +41,8 @@ class Application(object):
 
         if self.bot_loaded:
             self.initiate_driver()
-
-        self.show()
+        else:
+            self.show()
 
     def setup_ui(self):
         # Основной фрейм
@@ -253,7 +253,6 @@ if __name__ == "__main__":
 
             print(f"---> RUN NUMBER {i} <---")
             Application(run_number=i)
-            break
         except Exception as e:
             error = f'---> ERROR {e} <---'
             print(error)
