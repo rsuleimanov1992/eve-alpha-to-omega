@@ -9,17 +9,21 @@ LAUNCHER_PATH = r"C:\Users\adm\AppData\Local\eve-online\eve-online.exe"
 # LAUNCHER_PATH = r"C:\Users\user\AppData\Local\eve-online\eve-online.exe"
 
 
-def image_click(btn: str):
-    for _ in range(40):
+class InterfaceElement:
+    def __init__(self, path):
+        self.path = path
+        self.is_was_pressed = False
+
+    def click(self, confidence=0.9):
         try:
-            location = pyautogui.locateCenterOnScreen(btn, confidence=0.9)
+            location = pyautogui.locateCenterOnScreen(self.path, confidence=confidence)
             pyautogui.moveTo(location)
             pyautogui.click()
-            print(f'Кнопка {btn} нажата!')
-            return
+            print(f'Кнопка {self.path} нажата!')
+            self.is_was_pressed = True
+            return True
         except pyautogui.ImageNotFoundException:
-            sleep(1)
-    print(f'Кнопка {btn} НЕ найдена!')
+            return False
 
 
 def off_interface():
@@ -34,14 +38,40 @@ def off_interface():
 
 def start_game():
     subprocess.Popen(LAUNCHER_PATH)
-    image_click('eve-bot-framework/images/play.png')
-    image_click('eve-bot-framework/images/character.png')
-    image_click('eve-bot-framework/images/no_chat.png')
+    play = InterfaceElement('eve-bot-framework/images/play.png')
+    claim = InterfaceElement('eve-bot-framework/images/claim.png')
+    close = InterfaceElement('eve-bot-framework/images/close.png')
+    character = InterfaceElement('eve-bot-framework/images/character.png')
+    no_chat = InterfaceElement('eve-bot-framework/images/no_chat.png')
+
+    while not no_chat.is_was_pressed:
+        play.click()
+        claim.click()
+        close.click()
+        character.click()
+        no_chat.click()
+        sleep(1)
+
     off_interface()
-    sleep(20)
+    sleep(10)
+
+
+def close_game():
+    for _ in range(2):
+        subprocess.call(['taskkill', '/F', '/IM', 'exefile.exe'])
+        sleep(1)
+
 
 def restart_game():
-    for _ in range(3):
-        subprocess.call(['taskkill', '/F', '/IM', 'exefile.exe'])
-
+    close_game()
     start_game()
+
+
+def connection_lost_observer():
+    """ Следит за ошибками которые показывает интерфейс игры """
+    connection_lost = InterfaceElement('eve-bot-framework/images/connection_lost.png')
+    while True:
+        if connection_lost.click(0.8):
+            print('ИНТЕРФЕЙС ИГРЫ ВЫДАЛ ОШИБКУ!!! ЗАКРЫВАЕМ ИГРУ')
+            close_game()
+        sleep(10)

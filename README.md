@@ -134,3 +134,8 @@
 ```
 .\dist\eve-bot-application.exe autopilot_simple
 ```
+
+** Для работы озвучки файлами из проекта **
+```
+.\FFmpeg_install.ps1
+```

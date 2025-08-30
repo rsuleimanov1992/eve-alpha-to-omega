@@ -488,7 +488,7 @@ class AsteroidBeltScannerBot(Bot):
             return
         belts_left = belt_nodes.copy()
         while belts_left:
-            belt_node = GoodBelt.get_belt_node() or random.choice(belts_left)  # !!!
+            belt_node = GoodBelt.get_belt_node() or random.choice(belts_left)
             belt_name = belt_node.attrs.get("_text", "")
             if self._is_blacklisted(belt_name):
                 belts_left.remove(belt_node)

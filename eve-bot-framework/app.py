@@ -1,16 +1,17 @@
 import sys
-import tkinter as tk
-from tkinter import ttk, filedialog
 import json
 import os.path
 import threading
-import time
+import tkinter as tk
 from time import sleep
+from tkinter import ttk, filedialog
 
 import libeve.driver
 from api import api, BotView
 from libeve.utils import CustomLog
-from restart_utils import start_game, restart_game
+from restart_utils import start_game, restart_game, connection_lost_observer
+
+
 
 
 class Application(object):
@@ -247,13 +248,14 @@ class Application(object):
 
 
 if __name__ == "__main__":
+    threading.Thread(target=connection_lost_observer).start()
+
     for i in range(1, 1000000000):
         try:
             start_game() if i == 1 else restart_game()
 
             print(f"---> RUN NUMBER {i} <---")
             Application(run_number=i)
-            # break
         except Exception as e:
             error = f'---> ERROR {e} <---'
             print(error)

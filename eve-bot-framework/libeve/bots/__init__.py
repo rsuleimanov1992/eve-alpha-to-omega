@@ -7,6 +7,7 @@ import win32api, win32con, win32gui
 import win32com.client
 import pythoncom
 from libeve import KEYMAP
+from voice_func import say_ffplay
 
 
 speaker = win32com.client.Dispatch("SAPI.SpVoice")
@@ -89,7 +90,8 @@ class Bot(object):
         self.check_stop_safely_interrupt()
 
     def speak(self, text):
-        threading.Thread(target=speak_in_thread, args=(text,)).start()
+        if not say_ffplay(text, rate=1.5):
+            threading.Thread(target=speak_in_thread, args=(text,)).start()
 
     def say(self, text, narrate=True):
         self.check_interrupts()
@@ -110,6 +112,9 @@ class Bot(object):
         time.sleep(0.2)
 
     def move_cursor_to_node(self, node):
+        if isinstance(node, list):  # КОСТЫЛЬ!!! почему то вместо ноды сюда попадает пустой лист
+            return 0, 0             # после перезапуска
+
         self.check_interrupts()
         x = int(node.x * self.tree.width_ratio) + node.attrs.get("_displayWidth", 0) // 2
         y = int(node.y * self.tree.height_ratio) + node.attrs.get("_displayHeight", 0) // 2
