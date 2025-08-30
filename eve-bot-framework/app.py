@@ -253,6 +253,7 @@ if __name__ == "__main__":
 
             print(f"---> RUN NUMBER {i} <---")
             Application(run_number=i)
+            # break
         except Exception as e:
             error = f'---> ERROR {e} <---'
             print(error)
