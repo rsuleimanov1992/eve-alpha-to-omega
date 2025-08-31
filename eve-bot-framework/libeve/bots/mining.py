@@ -409,12 +409,9 @@ class MiningBot(Bot):
             self.check_interrupts()
             if do_periodic_checks():
                 break
-            try:
-                self.tree.refresh()
-            except Exception as e:
-                self.say(f"Ошибка обновления дерева UI: {e}")
-                time.sleep(interval)
-                continue
+            self.tree.refresh()
+            # self.say(f"Ошибка обновления дерева UI: {e}")
+            # time.sleep(interval)
 
             win = self._find_selected_item_window()
             _check_and_stop_ship_if_needed(win)

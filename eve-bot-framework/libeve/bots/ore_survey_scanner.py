@@ -101,7 +101,7 @@ class OreSurveyScannerBot(Bot):
     def scan_and_report(self):
         self.activate_survey_scanner()
         # Классика: просто ждем 2 секунды, потом обновляем дерево
-        time.sleep(2)
+        time.sleep(2.5)
         self.tree.refresh()
         ores = self.get_ore_list()
         if not ores:
