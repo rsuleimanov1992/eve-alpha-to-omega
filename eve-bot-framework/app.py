@@ -248,7 +248,8 @@ class Application(object):
 
 
 if __name__ == "__main__":
-    threading.Thread(target=connection_lost_observer).start()
+    observer = threading.Thread(target=connection_lost_observer)
+    observer.start()
 
     for i in range(1, 1000000000):
         try:
@@ -261,3 +262,5 @@ if __name__ == "__main__":
             print(error)
             CustomLog.write_log(error)
             sleep(5)
+
+    del observer

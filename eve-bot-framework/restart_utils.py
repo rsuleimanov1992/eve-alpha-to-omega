@@ -53,7 +53,7 @@ def start_game():
         sleep(1)
 
     off_interface()
-    sleep(10)
+    sleep(15)
 
 
 def close_game():

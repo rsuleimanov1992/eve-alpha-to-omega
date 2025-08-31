@@ -1,1 +1,10 @@
 venv
+.venv
+.env
+dist
+build
+asteroids.json
+debug.json
+log
+__pycache__
+eve-bot-application.spec
