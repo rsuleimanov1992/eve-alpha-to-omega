@@ -9,7 +9,7 @@ from libeve.monitoring import ShipHealthMonitor
 class MiningBot(Bot):
     def __init__(
         self,
-        approach_distance_m=14990,
+        approach_distance_m=6990,
         lock_distance_m=46000,
         laser_distance_m=14990,
         shield_threshold=40,
@@ -106,13 +106,13 @@ class MiningBot(Bot):
     def _stop_ship(self):
         self.say("Останавливаю корабль")
         self.deactivate_module("AfterBurner")
-        time.sleep(0.3)
+        time.sleep(0.7)
         stop_btn = self.tree.find_node({"type": "StopButton"}, type="StopButton", do_refresh=False)
         if not stop_btn:
             stop_btn = self.tree.find_node({"_hint": "Stop The Ship"}, type="StopButton", do_refresh=False)
         if stop_btn:
             self.click_node(stop_btn)
-            time.sleep(0.3)
+            time.sleep(0.7)
         else:
             self.say("Кнопка Stop не найдена!")
 
