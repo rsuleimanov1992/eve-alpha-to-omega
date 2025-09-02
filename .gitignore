@@ -8,3 +8,4 @@ debug.json
 log
 __pycache__
 eve-bot-application.spec
+.idea

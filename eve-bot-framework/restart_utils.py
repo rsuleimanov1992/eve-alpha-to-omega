@@ -1,9 +1,10 @@
+import win32api
+import win32con
 import pyautogui
 import subprocess
 from time import sleep
-import win32api
-import win32con
 
+from voice_func import say_ffplay
 
 LAUNCHER_PATH = r"C:\Users\adm\AppData\Local\eve-online\eve-online.exe"
 # LAUNCHER_PATH = r"C:\Users\user\AppData\Local\eve-online\eve-online.exe"
@@ -25,6 +26,13 @@ class InterfaceElement:
         except pyautogui.ImageNotFoundException:
             return False
 
+    def find(self, confidence=0.9):
+        try:
+            pyautogui.locateCenterOnScreen(self.path, confidence=confidence)
+            return True
+        except pyautogui.ImageNotFoundException:
+            return False
+
 
 def off_interface():
     win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
@@ -37,15 +45,20 @@ def off_interface():
 
 
 def start_game():
+    say_ffplay('Запускаю клиент игры')
     subprocess.Popen(LAUNCHER_PATH)
     play = InterfaceElement('eve-bot-framework/images/play.png')
     claim = InterfaceElement('eve-bot-framework/images/claim.png')
     close = InterfaceElement('eve-bot-framework/images/close.png')
     character = InterfaceElement('eve-bot-framework/images/character.png')
     no_chat = InterfaceElement('eve-bot-framework/images/no_chat.png')
+    online = InterfaceElement('eve-bot-framework/images/online.png')
+    online2 = InterfaceElement('eve-bot-framework/images/online2.png')
 
     while not no_chat.is_was_pressed:
-        play.click()
+        if online.find() or online2.find():
+            if play.click():
+                say_ffplay('Сервер работает!, вхожу ха-хааааааааааааа!')
         claim.click()
         close.click()
         character.click()
@@ -57,6 +70,7 @@ def start_game():
 
 
 def close_game():
+    say_ffplay('Закрываю игру')
     for _ in range(2):
         subprocess.call(['taskkill', '/F', '/IM', 'exefile.exe'])
         sleep(1)

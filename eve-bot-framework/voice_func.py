@@ -2,11 +2,14 @@ import os
 import re
 import asyncio
 import hashlib
+import threading
+import pythoncom
 import subprocess
+import win32com.client
+from dotenv import load_dotenv
 from num2words import num2words
 from telethon import TelegramClient, events
 from telethon.tl.types import MessageMediaDocument
-from dotenv import load_dotenv
 
 
 load_dotenv()
@@ -16,8 +19,7 @@ api_hash = os.environ.get('API_HASH')
 session_name = "tts_session"
 target_bot = "@silero_voice_bot"  # @username целевого бота
 folder_path = 'eve-bot-framework/sound/'
-
-print(api_id, api_hash)
+speaker = win32com.client.Dispatch("SAPI.SpVoice")
 
 
 def get_hashed_filename(text: str) -> str:
@@ -52,8 +54,7 @@ async def get_voice_acting(text: str):
         await client.run_until_disconnected()
 
 
-
-def play_mp3(path, rate=1):
+def play_mp3(path, speed=1.):
     # Собираем цепочку atempo для вне диапазона 0.5–2.0
     def atempo_chain(r):
         if r == 1.0:
@@ -71,7 +72,7 @@ def play_mp3(path, rate=1):
         chain.append(f"atempo={target}")
         return chain
 
-    af = ",".join(atempo_chain(rate)) if rate != 1.0 else None
+    af = ",".join(atempo_chain(speed)) if speed != 1.0 else None
     cmd = ["ffplay", "-loglevel", "quiet", "-nodisp", "-autoexit"]
     if af:
         cmd += ["-af", af]
@@ -103,14 +104,21 @@ def numbers_to_words_ru(text: str) -> str:
     return pattern.sub(repl, text)
 
 
-def say_ffplay(text, rate):
+def speak_in_thread(message):
+    pythoncom.CoInitialize()
+    try:
+        speaker.Speak(message)
+    finally:
+        pythoncom.CoUninitialize()
+
+
+def say_ffplay(text, speed=1.5):
     try:
         text = numbers_to_words_ru(text)
         text_hash = get_hashed_filename(text)
         file_path = os.path.join(folder_path, f'{text_hash}.mp3')
         if not os.path.exists(file_path):
             asyncio.run(get_voice_acting(text))
-        play_mp3(file_path, rate)
-        return True
+        play_mp3(file_path, speed)
     except:
-        return False
+        threading.Thread(target=speak_in_thread, args=(text,)).start()

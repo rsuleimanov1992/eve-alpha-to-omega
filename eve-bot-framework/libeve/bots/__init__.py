@@ -4,21 +4,8 @@ import sys
 import time
 import threading
 import win32api, win32con, win32gui
-import win32com.client
-import pythoncom
 from libeve import KEYMAP
 from voice_func import say_ffplay
-
-
-speaker = win32com.client.Dispatch("SAPI.SpVoice")
-
-
-def speak_in_thread(message):
-    pythoncom.CoInitialize()
-    try:
-        speaker.Speak(message)
-    finally:
-        pythoncom.CoUninitialize()
 
 
 class Bot(object):
@@ -90,8 +77,7 @@ class Bot(object):
         self.check_stop_safely_interrupt()
 
     def speak(self, text):
-        if not say_ffplay(text, rate=1.5):
-            threading.Thread(target=speak_in_thread, args=(text,)).start()
+        say_ffplay(text, speed=1.5)
 
     def say(self, text, narrate=True):
         self.check_interrupts()
