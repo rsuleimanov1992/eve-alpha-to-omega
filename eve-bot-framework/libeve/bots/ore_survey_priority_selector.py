@@ -55,7 +55,7 @@ class OreSurveyPrioritySelectorBot(Bot):
     LASER_RANGE_M = 14990
     DIST_PENALTY_PER_KM = 0.03
     NUM_LASERS = 2
-    LASER_YIELD = 1600
+    LASER_YIELD = 1500
     LASER_CYCLE_SEC = 180
     SHIP_SPEED_MPS = 300
 
@@ -347,7 +347,7 @@ class OreSurveyPrioritySelectorBot(Bot):
         SurveyScanResults.update_max_asteroid_val(len(all_entries))
         if len(all_entries) == SurveyScanResults.MAX:
             self.say(f'Астероидов {SurveyScanResults.MAX}')
-            all_entries = all_entries[:len(all_entries) - 1]
+            all_entries = all_entries[:len(all_entries) - 2]
         self.create_asteroid_log(all_entries)
         GoodBelt.set_asteroid_data(all_entries)
 

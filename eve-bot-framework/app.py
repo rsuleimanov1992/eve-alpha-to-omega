@@ -11,9 +11,6 @@ from api import api, BotView
 from libeve.utils import CustomLog
 from restart_utils import start_game, restart_game, connection_lost_observer
 
-
-
-
 class Application(object):
     def __init__(self, run_number: int):
         BotView.app = self
@@ -246,21 +243,27 @@ class Application(object):
     def show(self):
         self.root.mainloop()
 
-
 if __name__ == "__main__":
-    observer = threading.Thread(target=connection_lost_observer)
-    observer.start()
+    # Проверяем есть ли аргументы командной строки
+    if len(sys.argv) == 1:
+        # Если аргументов нет - запускаем только GUI без игры
+        print("Запуск в режиме выбора бота (без автозапуска игры)")
+        app = Application(run_number=1)
+    else:
+        # Если есть аргументы - запускаем игру и бесконечный цикл
+        observer = threading.Thread(target=connection_lost_observer)
+        observer.start()
 
-    for i in range(1, 1000000000):
-        try:
-            start_game() if i == 1 else restart_game()
+        for i in range(1, 1000000000):
+            try:
+                start_game() if i == 1 else restart_game()
 
-            print(f"---> RUN NUMBER {i} <---")
-            Application(run_number=i)
-        except Exception as e:
-            error = f'---> ERROR {e} <---'
-            print(error)
-            CustomLog.write_log(error)
-            sleep(5)
+                print(f"---> RUN NUMBER {i} <---")
+                Application(run_number=i)
+            except Exception as e:
+                error = f'---> ERROR {e} <---'
+                print(error)
+                CustomLog.write_log(error)
+                sleep(5)
 
-    del observer
+        del observer

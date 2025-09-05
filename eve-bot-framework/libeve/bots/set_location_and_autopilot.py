@@ -103,7 +103,6 @@ class SetLocationAndStartAutopilotBot(Bot):
             drones_bot.recall_blocking()
         except Exception as e:
             self.say(f"Ошибка возврата дронов (перед автопилотом): {e}")
-
         self.open_locations()
         time.sleep(0.3)
         label_text = "homestation" if self.in_space() else "mining"
@@ -122,4 +121,19 @@ class SetLocationAndStartAutopilotBot(Bot):
             autopilot.tree = self.tree
             autopilot.go()
         else:
-            self.undock()
+            if self.in_space():
+                # Маршрут уже задан (кнопка Set Destination не найдена), запускаем автопилот сразу
+                self.say("Маршрут уже задан, запускаю автопилот.")
+                autopilot = AutoPilotBot(
+                    log_fn=self.log_fn,
+                    pause_interrupt=self.pause_interrupt,
+                    pause_callback=self.pause_callback,
+                    stop_interrupt=self.stop_interrupt,
+                    stop_callback=self.stop_callback,
+                    stop_safely_interrupt=self.stop_safely_interrupt,
+                    stop_safely_callback=self.stop_safely_callback,
+                )
+                autopilot.tree = self.tree
+                autopilot.go()
+            else:
+                self.undock()
