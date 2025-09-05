@@ -122,7 +122,7 @@ def start_game():
 
     # Финальная проверка окна перед отключением интерфейса
     find_and_restore_eve_window()
-    off_interface()
+    #off_interface()
     sleep(40)
 
 def close_game():
