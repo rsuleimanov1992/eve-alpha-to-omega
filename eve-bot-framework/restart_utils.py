@@ -18,6 +18,7 @@ class InterfaceElement:
         try:
             location = pyautogui.locateCenterOnScreen(self.path, confidence=confidence)
             pyautogui.moveTo(location)
+            sleep(1)
             pyautogui.click()
             print(f'Кнопка {self.path} нажата!')
             self.is_was_pressed = True
