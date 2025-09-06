@@ -7,7 +7,7 @@ from time import sleep
 
 from voice_func import say_ffplay
 
-LAUNCHER_PATH = r"C:\Users\adm\AppData\Local\eve-online\eve-online"
+LAUNCHER_PATH = r"C:\Users\adm\AppData\Local\eve-online\eve-online.exe"
 
 class InterfaceElement:
     def __init__(self, path):
@@ -83,7 +83,7 @@ def find_and_restore_eve_window():
             print(f"Ошибка при работе с окном '{window_text}': {e}")
             continue
     
-    print("Окно exefile не найдено")
+    print("Окно EVE не найдено")
     return False
 
 def start_game():
@@ -128,7 +128,7 @@ def start_game():
 def close_game():
     say_ffplay('Закрываю игру')
     for _ in range(2):
-        subprocess.call(['taskkill', '/F', '/IM', 'exefile'])
+        subprocess.call(['taskkill', '/F', '/IM', 'exefile.exe'])
         sleep(1)
 
 def restart_game():
