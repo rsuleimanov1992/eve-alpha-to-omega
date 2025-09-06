@@ -112,13 +112,13 @@ def start_game():
             play_clicked = False
         
         claim.click()
-        sleep(1)
+        sleep(5)
         close.click()
-        sleep(1)
+        sleep(5)
         character.click()
-        sleep(1)
+        sleep(5)
         no_chat.click()
-        sleep(1)
+        sleep(5)
 
     # Финальная проверка окна перед отключением интерфейса
     find_and_restore_eve_window()
