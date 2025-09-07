@@ -47,8 +47,10 @@ def find_and_restore_eve_window():
     def enum_windows_proc(hwnd, windows):
         if win32gui.IsWindowVisible(hwnd):
             window_text = win32gui.GetWindowText(hwnd)
-            # Ищем только 2 конкретных окна
-            if window_text == 'EVE' or window_text == 'Программа запуска EVE Online':
+            # Строгая маска: 'EVE' или 'EVE - *' или точный лаунчер
+            if (window_text == 'EVE' or 
+                window_text.startswith('EVE - ') or 
+                window_text == 'Программа запуска EVE Online'):
                 windows.append((hwnd, window_text))
         return True
     
@@ -59,53 +61,53 @@ def find_and_restore_eve_window():
     for hwnd, window_text in windows:
         print(f"Окно: '{window_text}' (hwnd: {hwnd})")
     
-    # Если окна не найдены - запускаем лаунчер
-    if len(windows) == 0:
+    # Приоритет: сначала ищем окно игры ('EVE' или 'EVE - *'), затем лаунчер
+    game_window = None
+    launcher_window = None
+    
+    for hwnd, window_text in windows:
+        if window_text == 'EVE' or window_text.startswith('EVE - '):
+            game_window = (hwnd, window_text)
+        elif window_text == 'Программа запуска EVE Online':
+            launcher_window = (hwnd, window_text)
+    
+    # Если есть окно игры - работаем только с ним, лаунчер игнорируем
+    if game_window:
+        target_window = game_window
+    elif launcher_window:
+        target_window = launcher_window  
+    else:
+        # Если окна не найдены - запускаем лаунчер
         print("Окно EVE не найдено")
         print("Запускаю лаунчер!")
         say_ffplay('Окна игры не найдены, запускаю лаунчер')
         subprocess.Popen(LAUNCHER_PATH)
         return False
     
-    # Приоритет: сначала ищем окно игры 'EVE', затем лаунчер
-    game_window = None
-    launcher_window = None
-    
-    for hwnd, window_text in windows:
-        if window_text == 'EVE':
-            game_window = (hwnd, window_text)
-        elif window_text == 'Программа запуска EVE Online':
-            launcher_window = (hwnd, window_text)
-    
-    # Работаем с окном игры, если оно найдено
-    target_window = game_window if game_window else launcher_window
-    
-    if target_window:
-        hwnd, window_text = target_window
-        try:
-            # Проверяем, свернуто ли окно
-            if win32gui.IsIconic(hwnd):
-                print(f"Окно '{window_text}' свернуто, разворачиваю")
-                say_ffplay('Окно игры свернуто, разворачиваю')
-                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                sleep(1)
-                # Выводим окно на передний план
+    hwnd, window_text = target_window
+    try:
+        # Проверяем, свернуто ли окно
+        if win32gui.IsIconic(hwnd):
+            print(f"Окно '{window_text}' свернуто, разворачиваю")
+            say_ffplay('Окно игры свернуто, разворачиваю')
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            sleep(1)
+            # Выводим окно на передний план
+            win32gui.SetForegroundWindow(hwnd)
+            print("Окно развернуто")
+            return True
+        else:
+            # Проверяем, активно ли окно
+            current_window = win32gui.GetForegroundWindow()
+            if current_window != hwnd:
+                print(f"Вывожу окно '{window_text}' на передний план")
                 win32gui.SetForegroundWindow(hwnd)
-                print("Окно развернуто")
-                return True
             else:
-                # Проверяем, активно ли окно
-                current_window = win32gui.GetForegroundWindow()
-                if current_window != hwnd:
-                    print(f"Вывожу окно '{window_text}' на передний план")
-                    win32gui.SetForegroundWindow(hwnd)
-                else:
-                    print(f"Окно '{window_text}' уже активно")
-                return True
-        except Exception as e:
-            print(f"Ошибка при работе с окном '{window_text}': {e}")
-    
-    return False
+                print(f"Окно '{window_text}' уже активно")
+            return True
+    except Exception as e:
+        print(f"Ошибка при работе с окном '{window_text}': {e}")
+        return False
 
 def start_game():
     say_ffplay('Запускаю клиент игры')
