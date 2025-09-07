@@ -110,6 +110,26 @@ def find_and_restore_eve_window():
         return False
 
 def start_game():
+    # Проверяем, не запущена ли уже игра
+    def check_game_running():
+        def enum_windows_proc(hwnd, windows):
+            if win32gui.IsWindowVisible(hwnd):
+                window_text = win32gui.GetWindowText(hwnd)
+                if window_text == 'EVE' or window_text.startswith('EVE - '):
+                    windows.append((hwnd, window_text))
+            return True
+        
+        windows = []
+        win32gui.EnumWindows(enum_windows_proc, windows)
+        return len(windows) > 0
+    
+    # Если игра уже запущена - закрываем её
+    if check_game_running():
+        say_ffplay('Игра уже запущена, закрываю её')
+        print('Обнаружена запущенная игра, закрываю...')
+        subprocess.call(['taskkill', '/F', '/IM', 'exefile.exe'])
+        sleep(2)
+    
     say_ffplay('Запускаю клиент игры')
     subprocess.Popen(LAUNCHER_PATH)
     play = InterfaceElement('eve-bot-framework/images/play.png')
