@@ -13,7 +13,7 @@ class MiningBot(Bot):
         self,
         approach_distance_m=6990,
         lock_distance_m=46000,
-        laser_distance_m=14990,
+        laser_distance_m=18990,
         shield_threshold=40,
         shield_check_interval=3,
         *args, **kwargs
