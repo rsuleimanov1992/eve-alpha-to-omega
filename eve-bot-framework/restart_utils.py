@@ -47,7 +47,7 @@ def find_and_restore_eve_window():
     def enum_windows_proc(hwnd, windows):
         if win32gui.IsWindowVisible(hwnd):
             window_text = win32gui.GetWindowText(hwnd)
-            # Ищем окно с названием exefile
+            # Ищем окно с названием, содержащим EVE
             if window_text and 'EVE' in window_text:
                 windows.append((hwnd, window_text))
         return True
@@ -59,7 +59,21 @@ def find_and_restore_eve_window():
     for hwnd, window_text in windows:
         print(f"Окно: '{window_text}' (hwnd: {hwnd})")
     
+    # Приоритет: сначала ищем окно игры 'EVE', затем лаунчер
+    game_window = None
+    launcher_window = None
+    
     for hwnd, window_text in windows:
+        if window_text == 'EVE':
+            game_window = (hwnd, window_text)
+        elif 'Программа запуска EVE Online' in window_text:
+            launcher_window = (hwnd, window_text)
+    
+    # Работаем с окном игры, если оно найдено
+    target_window = game_window if game_window else launcher_window
+    
+    if target_window:
+        hwnd, window_text = target_window
         try:
             # Проверяем, свернуто ли окно
             if win32gui.IsIconic(hwnd):
@@ -82,7 +96,6 @@ def find_and_restore_eve_window():
                 return True
         except Exception as e:
             print(f"Ошибка при работе с окном '{window_text}': {e}")
-            continue
     
     print("Окно EVE не найдено")
     return False
