@@ -43,12 +43,12 @@ def off_interface():
     win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)
 
 def find_and_restore_eve_window():
-    """Находит окно EVE и разворачивает его если оно свернуто"""
+    """Находит конкретные окна EVE и разворачивает их если они свернуты"""
     def enum_windows_proc(hwnd, windows):
         if win32gui.IsWindowVisible(hwnd):
             window_text = win32gui.GetWindowText(hwnd)
-            # Ищем окно с названием, содержащим EVE
-            if window_text and 'EVE' in window_text:
+            # Ищем только 2 конкретных окна
+            if window_text == 'EVE' or window_text == 'Программа запуска EVE Online':
                 windows.append((hwnd, window_text))
         return True
     
@@ -59,6 +59,14 @@ def find_and_restore_eve_window():
     for hwnd, window_text in windows:
         print(f"Окно: '{window_text}' (hwnd: {hwnd})")
     
+    # Если окна не найдены - запускаем лаунчер
+    if len(windows) == 0:
+        print("Окно EVE не найдено")
+        print("Запускаю лаунчер!")
+        say_ffplay('Окна игры не найдены, запускаю лаунчер')
+        subprocess.Popen(LAUNCHER_PATH)
+        return False
+    
     # Приоритет: сначала ищем окно игры 'EVE', затем лаунчер
     game_window = None
     launcher_window = None
@@ -66,7 +74,7 @@ def find_and_restore_eve_window():
     for hwnd, window_text in windows:
         if window_text == 'EVE':
             game_window = (hwnd, window_text)
-        elif 'Программа запуска EVE Online' in window_text:
+        elif window_text == 'Программа запуска EVE Online':
             launcher_window = (hwnd, window_text)
     
     # Работаем с окном игры, если оно найдено
@@ -97,7 +105,6 @@ def find_and_restore_eve_window():
         except Exception as e:
             print(f"Ошибка при работе с окном '{window_text}': {e}")
     
-    print("Окно EVE не найдено")
     return False
 
 def start_game():
