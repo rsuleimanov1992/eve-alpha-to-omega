@@ -2,9 +2,47 @@ import re
 import time
 import win32api
 import win32con
+from datetime import datetime, timezone
 from libeve.bots import Bot
 
+
 class MiningDronesBot(Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.server_restart_blocked = False
+        
+    
+    def get_minutes_until_eve_restart(self):
+        """Вычисляет минуты до ближайшего рестарта сервера EVE (11:00 UTC ежедневно)"""
+        now = datetime.now(timezone.utc)
+        restart_time = now.replace(hour=11, minute=0, second=0, microsecond=0)
+        
+        # Если текущее время уже прошло 11:00 UTC, рестарт завтра
+        if now >= restart_time:
+            restart_time = restart_time.replace(day=restart_time.day + 1)
+        
+        time_diff = restart_time - now
+        minutes_until_restart = time_diff.total_seconds() / 60
+        return minutes_until_restart
+    
+    
+    def check_server_restart_safety(self):
+        """Проверяет, безопасно ли выпускать дронов (больше 10 минут до рестарта)"""
+        minutes_left = self.get_minutes_until_eve_restart()
+        
+        if minutes_left <= 10:
+            if not self.server_restart_blocked:
+                self.say(f"До рестарта сервера осталось {minutes_left:.1f} минут. Блокирую выпуск дронов.")
+                self.server_restart_blocked = True
+            return False
+        
+        if self.server_restart_blocked and minutes_left > 10:
+            self.say(f"До рестарта сервера {minutes_left:.1f} минут. Разблокирую выпуск дронов.")
+            self.server_restart_blocked = False
+            
+        return True
+
+
     def find_drones_window(self):
         self.tree.refresh()
         return self.tree.find_node({"_name": "droneview"}, type="DronesWindow", do_refresh=False)
@@ -56,7 +94,6 @@ class MiningDronesBot(Bot):
         drones_label = self.tree.find_node({"_setText": "Drones"}, type="Label", do_refresh=False)
         if drones_label:
             self.click_node(drones_label)
-            # time.sleep(0.2)1
         else:
             win = self.find_drones_window()
             if win:
@@ -64,6 +101,14 @@ class MiningDronesBot(Bot):
                 # time.sleep(0.2)
 
     def release_and_mine(self):
+        # Проверяем безопасность выпуска дронов перед рестартом
+        if not self.check_server_restart_safety():
+            # Если дроны в космосе и близко рестарт - убираем их
+            if self.drones_in_space() > 0:
+                self.say("Убираю дронов из-за приближающегося рестарта сервера")
+                self.recall_blocking()
+            return False
+            
         self.tree.refresh()
         if not self.find_drones_window():
             self.say("Нет окна дронов - пропускаю работу с дронами")
