@@ -131,6 +131,14 @@ def close_game():
     for _ in range(2):
         subprocess.call(['taskkill', '/F', '/IM', 'exefile.exe'])
         sleep(1)
+    
+    # Закрываем лаунчер
+    subprocess.call(['taskkill', '/F', '/IM', 'eve-online.exe'])
+    sleep(2)
+    
+    # Перезапускаем лаунчер
+    subprocess.Popen(LAUNCHER_PATH)
+    say_ffplay('Лаунчер перезапущен')
 
 def restart_game():
     close_game()
