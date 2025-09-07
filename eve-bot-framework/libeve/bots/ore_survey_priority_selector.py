@@ -66,7 +66,7 @@ class OreSurveyPrioritySelectorBot(Bot):
     LASER_RANGE_M = 14990
     DIST_PENALTY_PER_KM = 0.03
     NUM_LASERS = 2
-    LASER_YIELD = 1500
+    LASER_YIELD = 1950
     LASER_CYCLE_SEC = 180
     SHIP_SPEED_MPS = 300
 
