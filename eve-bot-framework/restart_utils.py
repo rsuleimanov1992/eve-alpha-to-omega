@@ -18,7 +18,7 @@ class InterfaceElement:
         try:
             location = pyautogui.locateCenterOnScreen(self.path, confidence=confidence)
             pyautogui.moveTo(location)
-            sleep(1)
+            sleep(5)
             pyautogui.click()
             print(f'Кнопка {self.path} нажата!')
             self.is_was_pressed = True
@@ -113,13 +113,13 @@ def start_game():
             play_clicked = False
         
         claim.click()
-        sleep(5)
+        sleep(1)
         close.click()
-        sleep(5)
+        sleep(1)
         character.click()
-        sleep(5)
+        sleep(1)
         no_chat.click()
-        sleep(5)
+        sleep(1)
 
     # Финальная проверка окна перед отключением интерфейса
     find_and_restore_eve_window()

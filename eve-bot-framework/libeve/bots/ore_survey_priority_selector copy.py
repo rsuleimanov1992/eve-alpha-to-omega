@@ -70,34 +70,6 @@ class OreSurveyPrioritySelectorBot(Bot):
     LASER_CYCLE_SEC = 180
     SHIP_SPEED_MPS = 300
 
-    def _find_selected_item_window(self):
-        self.tree.refresh()
-        for node in self.tree.find_node({"_name": "content"}, type="Container", select_many=True, do_refresh=False) or []:
-            labels = [
-                self.tree.nodes.get(l)
-                for c in getattr(node, "children", [])
-                for h in getattr(self.tree.nodes.get(c), "children", []) or []
-                for m in getattr(self.tree.nodes.get(h), "children", []) or []
-                for w in getattr(self.tree.nodes.get(m), "children", []) or []
-                for l in getattr(self.tree.nodes.get(w), "children", []) or []
-            ]
-            if any(label and label.type == "Label" and label.attrs.get("_setText") == "Selected Item" for label in labels):
-                return node
-        return None
-    
-    def _find_child_by_name(self, node, type_, name):
-        if not node: return None
-        stack = [node]
-        while stack:
-            current = stack.pop()
-            if current.type == type_ and current.attrs.get("_name") == name:
-                return current
-            stack.extend([self.tree.nodes.get(ch) for ch in getattr(current, "children", []) or [] if self.tree.nodes.get(ch)])
-        return None
-
-    def _find_button(self, window_node, name):
-        return self._find_child_by_name(window_node, "SelectedItemButton", name)
-
 
     def __init__(self, *args, shield_threshold=50, shield_check_interval=5, **kwargs):
         super().__init__(*args, **kwargs)
@@ -105,6 +77,7 @@ class OreSurveyPrioritySelectorBot(Bot):
         self.shield_check_interval = shield_check_interval
         self._last_announced_shield = 100
         self._last_shield_check = 0
+        self.excluded_asteroids = set()  # Новое поле для исключенных астероидов
 
 
     def create_asteroid_log(self, all_entries):
@@ -308,6 +281,8 @@ class OreSurveyPrioritySelectorBot(Bot):
         )
         scanner_bot.tree = self.tree
         scanner_bot.go()
+        # Очищаем список исключенных астероидов при переходе к новому поясу
+        self.excluded_asteroids.clear()
 
 
     def run_survey_scanner(self):
@@ -323,6 +298,14 @@ class OreSurveyPrioritySelectorBot(Bot):
         )
         survey_bot.tree = self.tree
         survey_bot.scan_and_report()
+
+
+    def is_asteroid_selected(self):
+        """Проверяет, выбран ли астероид в качестве цели"""
+        self.tree.refresh()
+        # Ищем узел с информацией о выбранной цели
+        target_nodes = self.tree.find_node({}, type="TargetContainer", select_many=True, do_refresh=False) or []
+        return len(target_nodes) > 0
 
 
     def select_priority_group_and_report(self):
@@ -364,6 +347,12 @@ class OreSurveyPrioritySelectorBot(Bot):
                 name = m.group("name").strip()
                 if name not in self.ORES:
                     continue
+                
+                # Пропускаем исключенные астероиды
+                asteroid_id = f"{name}_{m.group('volume')}_{m.group('distance')}"
+                if asteroid_id in self.excluded_asteroids:
+                    continue
+                
                 volume_str = m.group("volume")
                 volume = self.parse_volume(volume_str)
                 distance_str = m.group("distance").replace(" ", "")
@@ -396,6 +385,7 @@ class OreSurveyPrioritySelectorBot(Bot):
                     "raw_text": text,
                     "node": node,
                     "kof": self.ORES_KOF[name],
+                    "asteroid_id": asteroid_id,
                 })
 
 
@@ -421,46 +411,39 @@ class OreSurveyPrioritySelectorBot(Bot):
 
 
         if all_entries:
-            sorted_entries = sorted(all_entries, key=lambda e: e['score'], reverse=True)
-            for entry in sorted_entries:
-                node = entry.get("node")
-                if node:
-                    self.click_node(node, right_click=False)
-                    time.sleep(0.5)
-                    self.tree.refresh()
-                    
-                    # Проверяем появление окна Selected Item с кнопками управления
-                    selected_window = self._find_selected_item_window()
-                    if selected_window:
-                        lock_button = self._find_button(selected_window, "selectedItemLockTarget")
-                        unlock_button = self._find_button(selected_window, "selectedItemUnLockTarget")
-                        
-                        # Проверяем наличие хотя бы одной из кнопок управления целью
-                        if lock_button or unlock_button:
-                            from libeve.bots.mining import MiningBot
-                            mining_bot = MiningBot(
-                                log_fn=self.log_fn,
-                                pause_interrupt=self.pause_interrupt,
-                                pause_callback=self.pause_callback,
-                                stop_interrupt=self.stop_interrupt,
-                                stop_callback=self.stop_callback,
-                                stop_safely_interrupt=self.stop_safely_interrupt,
-                                stop_safely_callback=self.stop_safely_callback,
-                            )
-                            mining_bot.tree = self.tree
-                            mining_bot.go(
-                                cycles=entry["cycles"],
-                                last_cycle_partial=entry["last_cycle_partial"],
-                                partial_time=entry["partial_time"]
-                            )
-                            return
-                    
-                    self.say("Астероид не выбран в цель, вероятно за границами интерфейса. Исключаю и пробую следующий.")
-                else:
-                    continue
-
-            self.say("Ни один астероид не удалось выбрать")
-            self.run_belt_scanner()
+            best = max(all_entries, key=lambda e: e['score'])
+            node = best.get("node")
+            if node:
+                self.click_node(node, right_click=False)
+                time.sleep(0.5)  # Небольшая пауза для обновления интерфейса
+                
+                # Проверяем, выбран ли астероид
+                if not self.is_asteroid_selected():
+                    self.say(f"Астероид {best['name']} за границами интерфейса, исключаю")
+                    self.excluded_asteroids.add(best['asteroid_id'])
+                    # Рекурсивно вызываем метод для поиска следующего астероида
+                    self.select_priority_group_and_report()
+                    return
+                
+                from libeve.bots.mining import MiningBot
+                mining_bot = MiningBot(
+                    log_fn=self.log_fn,
+                    pause_interrupt=self.pause_interrupt,
+                    pause_callback=self.pause_callback,
+                    stop_interrupt=self.stop_interrupt,
+                    stop_callback=self.stop_callback,
+                    stop_safely_interrupt=self.stop_safely_interrupt,
+                    stop_safely_callback=self.stop_safely_callback,
+                )
+                mining_bot.tree = self.tree
+                mining_bot.go(
+                    cycles=best["cycles"],
+                    last_cycle_partial=best["last_cycle_partial"],
+                    partial_time=best["partial_time"]
+                )
+            else:
+                self.say("Астероид не найден")
+                self.run_survey_scanner()
             return
         self.say("Руда не найдена")
         self.run_belt_scanner()
