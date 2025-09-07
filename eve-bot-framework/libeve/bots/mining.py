@@ -1,10 +1,12 @@
 import re
 import time
+from datetime import datetime, timezone, timedelta
 from libeve.bots import Bot
 from libeve.bots.hold_status import HoldStatusBot
 from libeve.bots.set_location_and_autopilot import SetLocationAndStartAutopilotBot
 from libeve.bots.mining_drones import MiningDronesBot
 from libeve.monitoring import ShipHealthMonitor
+
 
 class MiningBot(Bot):
     def __init__(
@@ -27,6 +29,19 @@ class MiningBot(Bot):
         self._moved_since_last_scan = False
         self.evacuating = False
         self.ship_stop_distance = 11000
+
+
+    def check_server_restart_time(self):
+        """Проверка времени до рестарта сервера EVE (14:00 МСК)"""
+        # Московское время
+        msk_tz = timezone(timedelta(hours=3))
+        now_msk = datetime.now(msk_tz)
+        
+        # Проверяем если сейчас 13:50-14:00 МСК
+        if now_msk.hour == 13 and now_msk.minute >= 50:
+            return True
+        return False
+
 
     def align_to_homestation(self):
         self.say("Разгон на станцию")
@@ -81,6 +96,7 @@ class MiningBot(Bot):
         else:
             self.say("Нет пункта Align to")
 
+
     def _activate_lasers_if_needed(self):
         activated = False
         if not self.is_module_active("F1"):
@@ -92,16 +108,20 @@ class MiningBot(Bot):
         if activated:
             self._cycle_start_time = time.time()
 
+
     def _deactivate_lasers(self):
         self.deactivate_module("F1")
         self.deactivate_module("F2")
         self.check_hold_and_handle()
 
+
     def _lasers_are_active(self):
         return self.is_module_active("F1") or self.is_module_active("F2")
 
+
     def _both_lasers_active(self):
         return self.is_module_active("F1") and self.is_module_active("F2")
+
 
     def _stop_ship(self):
         self.say("Останавливаю корабль")
@@ -115,6 +135,7 @@ class MiningBot(Bot):
             time.sleep(0.7)
         else:
             self.say("Кнопка Stop не найдена!")
+
 
     def _find_selected_item_window(self):
         self.tree.refresh()
@@ -131,6 +152,7 @@ class MiningBot(Bot):
                 return node
         return None
 
+
     def _find_child_by_name(self, node, type_, name):
         if not node: return None
         stack = [node]
@@ -141,8 +163,10 @@ class MiningBot(Bot):
             stack.extend([self.tree.nodes.get(ch) for ch in getattr(current, "children", []) or [] if self.tree.nodes.get(ch)])
         return None
 
+
     def _find_button(self, window_node, name):
         return self._find_child_by_name(window_node, "SelectedItemButton", name)
+
 
     def _get_label_text(self, window_node):
         cont = self._find_child_by_name(window_node, "ScrollContainer", "labelCont")
@@ -158,6 +182,7 @@ class MiningBot(Bot):
                     if label and label.type == "EveLabelMedium":
                         return label.attrs.get("_setText", "")
         return None
+
 
     def _parse_object_distance(self, label_text):
         if not label_text or "<br>" not in label_text:
@@ -175,16 +200,19 @@ class MiningBot(Bot):
         meters = value * 1000 if unit == "km" else value
         return name.strip(), meters
 
+
     def _is_target_locked(self, win):
         btn_unlock = self._find_button(win, "selectedItemUnLockTarget")
         btn_lock = self._find_button(win, "selectedItemLockTarget")
         return bool(btn_unlock) and not btn_lock
+
 
     def _lock_target(self, win):
         btn = self._find_button(win, "selectedItemLockTarget")
         if btn:
             self.say("Беру в таргет")
             self.click_node(btn)
+
 
     def _approach(self, win):
         self.activate_module("AfterBurner")
@@ -196,10 +224,12 @@ class MiningBot(Bot):
             self.click_node(btn)
             self._moved_since_last_scan = True
 
+
     def deactivate_lasers_before_scan(self):
         if self._lasers_are_active():
             self.say("Лазеры активны, выключаю перед сканированием.")
             self._deactivate_lasers()
+
 
     def run_ore_scanner(self):
         from libeve.bots.ore_survey_scanner import OreSurveyScannerBot
@@ -216,6 +246,7 @@ class MiningBot(Bot):
         scanner.tree = self.tree
         scanner.scan_and_report()
 
+
     def run_ore_priority_selector(self):
         from libeve.bots.ore_survey_priority_selector import OreSurveyPrioritySelectorBot
         self.say("Пропускаю сканирование, выбираю астероид через priority selector.")
@@ -231,12 +262,14 @@ class MiningBot(Bot):
         selector.tree = self.tree
         selector.select_priority_group_and_report()
 
+
     def wait_after_scan(self, duration, shield_check_fn):
         t_scan = time.time()
         while time.time() - t_scan < duration:
             self.check_interrupts()
             shield_check_fn()
             time.sleep(0.1)
+
 
     def _call_autopilot_with_drones(self, drones_bot):
         if self.evacuating:
@@ -277,9 +310,29 @@ class MiningBot(Bot):
         autopilot.tree = self.tree
         autopilot.go()
 
+
     def check_hold_and_handle(self, drones_bot=None):
         if self.evacuating:
             return False
+        
+        # Проверка времени рестарта сервера
+        if self.check_server_restart_time():
+            self.say("Близится рестарт сервера EVE (14:00 МСК). Начинаю эвакуацию.")
+            self.align_to_homestation()
+            if drones_bot is None:
+                drones_bot = MiningDronesBot(
+                    log_fn=self.log_fn,
+                    pause_interrupt=self.pause_interrupt,
+                    pause_callback=self.pause_callback,
+                    stop_interrupt=self.stop_interrupt,
+                    stop_callback=self.stop_callback,
+                    stop_safely_interrupt=self.stop_safely_interrupt,
+                    stop_safely_callback=self.stop_safely_callback,
+                )
+                drones_bot.tree = self.tree
+            self._call_autopilot_with_drones(drones_bot)
+            return True
+        
         try:
             holdbot = HoldStatusBot(
                 log_fn=self.log_fn,
@@ -312,6 +365,7 @@ class MiningBot(Bot):
             self.say(f"Ошибка проверки трюма: {e}")
         return False
 
+
     def check_shield_health(self, drones_bot=None):
         if self.evacuating:
             return
@@ -320,6 +374,7 @@ class MiningBot(Bot):
             monitor.check()
         except Exception as e:
             self.say(f"Ошибка мониторинга здоровья щита: {e}")
+
 
     def notify_health_status(self, status, drones_bot=None):
         if self.evacuating:
@@ -339,6 +394,7 @@ class MiningBot(Bot):
                     return
             except (ValueError, IndexError):
                 self.say("Ошибка обработки состояния щита")
+
 
     def mining_sequence(self, interval=0.2, cycles=None, last_cycle_partial=False, partial_time=0):
         last_approach = False
@@ -360,6 +416,7 @@ class MiningBot(Bot):
         mining_cycles_done = 0
         laser_cycle_length = 180
 
+
         def do_periodic_checks():
             now = time.time()
             nonlocal last_shield_check
@@ -370,11 +427,13 @@ class MiningBot(Bot):
                 return True
             return False
 
+
         def _check_and_stop_ship_if_needed(win):
             label_text = self._get_label_text(win) if win else None
             _, meters = self._parse_object_distance(label_text) if label_text else (None, None)
             if self.is_module_active('AfterBurner') and meters is not None and meters <= self.ship_stop_distance:
                 self._stop_ship()
+
 
         self.tree.refresh()
         win = self._find_selected_item_window()
@@ -384,6 +443,7 @@ class MiningBot(Bot):
             target_locked = self._is_target_locked(win)
             label_text = self._get_label_text(win)
             _, meters = self._parse_object_distance(label_text) if label_text else (None, None)
+
 
         if target_locked:
             self.say("Цель уже захвачена при запуске бота.")
@@ -405,6 +465,7 @@ class MiningBot(Bot):
             except Exception:
                 pass
 
+
         while not self.evacuating:
             self.check_interrupts()
             if do_periodic_checks():
@@ -413,14 +474,18 @@ class MiningBot(Bot):
             # self.say(f"Ошибка обновления дерева UI: {e}")
             # time.sleep(interval)
 
+
             win = self._find_selected_item_window()
             _check_and_stop_ship_if_needed(win)
+
 
             label_text = self._get_label_text(win) if win else None
             _, meters = self._parse_object_distance(label_text) if label_text else (None, None)
 
+
             btn_lock = self._find_button(win, "selectedItemLockTarget") if win else None
             btn_unlock = self._find_button(win, "selectedItemUnLockTarget") if win else None
+
 
             if not btn_lock and not btn_unlock:
                 self.deactivate_lasers_before_scan()
@@ -433,9 +498,11 @@ class MiningBot(Bot):
                 stuck_timer_start = None
                 continue
 
+
             name, meters = self._parse_object_distance(label_text) if label_text else (None, None)
             btn_approach = self._find_button(win, "selectedItemApproach")
             need_approach = meters is not None and meters > self.approach_distance_m
+
 
             if need_approach:
                 if stuck_timer_start is None:
@@ -447,11 +514,13 @@ class MiningBot(Bot):
             else:
                 stuck_timer_start = None
 
+
             if need_approach and not last_approach and btn_approach:
                 self._approach(win)
                 last_approach = True
             if not need_approach:
                 last_approach = False
+
 
             target_locked = self._is_target_locked(win)
             LOCK_ATTEMPTS = 3
@@ -467,6 +536,7 @@ class MiningBot(Bot):
                             self._cycle_start_time = time.time()
                     else:
                         self.say("Цель слишком далеко для лазеров, жду сближения")
+
 
                     t_lock = time.time()
                     locked = False
@@ -506,6 +576,7 @@ class MiningBot(Bot):
             if meters is not None and (meters > self.lock_distance_m or target_locked):
                 last_locked = False
 
+
             lasers_should_be_active = target_locked and (meters is not None) and meters <= self.laser_distance_m
             if lasers_should_be_active:
                 if not self._both_lasers_active():
@@ -517,6 +588,7 @@ class MiningBot(Bot):
                     self._cycle_start_time = self._cycle_start_time or time.time()
             else:
                 lasers_active = False
+
 
             if self._lasers_are_active() and cycles is not None and self._cycle_start_time is not None:
                 if mining_cycles_done < cycles and (time.time() - self._cycle_start_time) >= laser_cycle_length:
@@ -567,6 +639,7 @@ class MiningBot(Bot):
                         self._moved_since_last_scan = False
                         break
             time.sleep(interval)
+
 
     def go(self, cycles=None, last_cycle_partial=False, partial_time=0):
         self._cycle_start_time = None

@@ -1,7 +1,8 @@
 import time
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from libeve.bots import Bot
 from libeve.utils import CustomLog
+
 
 
 class InventoryTransferBot(Bot):
@@ -12,6 +13,19 @@ class InventoryTransferBot(Bot):
     ):
         super().__init__(log_fn=log_fn, *args, **kwargs)
 
+
+    def check_server_restart_time(self):
+        """Проверка времени до рестарта сервера EVE (14:00 МСК)"""
+        # Московское время
+        msk_tz = timezone(timedelta(hours=3))
+        now_msk = datetime.now(msk_tz)
+        
+        # Проверяем если сейчас 13:50-14:00 МСК
+        if now_msk.hour == 13 and now_msk.minute >= 50:
+            return True
+        return False
+
+
     def log(self, msg):
         if self.log_fn:
             self.log_fn(msg)
@@ -19,12 +33,15 @@ class InventoryTransferBot(Bot):
             print(msg)
         self.say(msg)
 
+
     def at_station(self):
         undock_btn = self.tree.find_node({"_name": "undockButton"})
         return undock_btn is not None
 
+
     def in_space(self):
         return not self.tree.find_node({"_name": "undockButton"})
+
 
     def inventory_open(self):
         self.tree.refresh()
@@ -41,6 +58,7 @@ class InventoryTransferBot(Bot):
             self.log("Инвентарь не найден")
             return False
 
+
     def open_inventory(self):
         btn = self.tree.find_node({"_name": "inventory"}, type="ButtonInventory")
         if not btn:
@@ -52,6 +70,7 @@ class InventoryTransferBot(Bot):
         self.tree.refresh()
         time.sleep(0.5)  # увеличенная задержка после refresh
         return self.inventory_open()
+
 
     def select_mining_hold(self):
         # Ждём появления Mining Hold до 5 секунд
@@ -68,9 +87,11 @@ class InventoryTransferBot(Bot):
                 self.log("Нет Mining Hold")
                 return False
 
+
         self.log("Выбираю Mining Hold")
         self.click_node(hold)
         time.sleep(0.5)  # увеличенная задержка после клика
+
 
         # Ждём появления содержимого после клика (до 3 сек)
         t1 = time.time()
@@ -82,14 +103,17 @@ class InventoryTransferBot(Bot):
                 return True
         return True  # Даже если пусто, но hold выбран — это не ошибка
 
+
     def ore_in_hold(self):
         return [
             n for n in self.tree.find_node({}, type="Label", select_many=True) or []
             if n.attrs.get("_name") == "itemNameLabel"
         ]
 
+
     def item_hangar(self):
         return self.tree.find_node({"_name": "ItemHangar"}, type="TreeViewEntryWithTag")
+
 
     def transfer_ore(self):
         hangar = self.item_hangar()
@@ -113,11 +137,13 @@ class InventoryTransferBot(Bot):
         self.log("Руда осталась в Hold!")
         return False
 
+
     # def check_time_should_exit(self):
     #     now = datetime.now()
     #     if (now.hour == 13 and now.minute >= 30) or (now.hour == 14 and now.minute <= 10):
     #         self.say("Время завершить работу. Останавливаю бота!")
     #         exit(0)
+
 
     def launch_autopilot(self):
         from libeve.bots.set_location_and_autopilot import SetLocationAndStartAutopilotBot
@@ -133,12 +159,20 @@ class InventoryTransferBot(Bot):
         autopilot_bot.tree = self.tree
         autopilot_bot.go()
 
+
     def transfer(self):
+        # Проверка времени рестарта сервера
+        if self.check_server_restart_time():
+            self.log("Близится рестарт сервера EVE (14:00 МСК). Переходим в режим ожидания.")
+            while True:
+                time.sleep(60)  # Вечный сон по минуте
+        
         # self.check_time_should_exit()
         if not self.at_station() or self.in_space():
             self.log("Перенос невозможен")
             # self.check_time_should_exit()
             return
+
 
         if not self.inventory_open():
             if not self.open_inventory():
@@ -150,10 +184,12 @@ class InventoryTransferBot(Bot):
                 # self.check_time_should_exit()
                 return
 
+
         if not self.select_mining_hold():
             self.log("Не выбрать Mining Hold")
             # self.check_time_should_exit()
             return
+
 
         ores = self.ore_in_hold()
         if not ores:
@@ -162,10 +198,12 @@ class InventoryTransferBot(Bot):
             # self.check_time_should_exit()
             return
 
+
         if not self.transfer_ore():
             self.log("Ошибка переноса руды")
             # self.check_time_should_exit()
             return
+
 
         self.log("Груз перенесён")
         CustomLog.create_sla_log()
